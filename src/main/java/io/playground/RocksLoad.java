@@ -9,8 +9,6 @@ import java.util.Random;
 import java.util.stream.Collectors;
 import org.rocksdb.CompactionJobInfo;
 import org.rocksdb.CompactionOptions;
-import org.rocksdb.LRUCache;
-import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDB.LiveFiles;
 import org.rocksdb.RocksDBException;
@@ -100,11 +98,15 @@ public class RocksLoad {
         System.out.println("start reading... ");
         long startReadNs = System.nanoTime();
         for (long i = 0; i < 1_000_000; i++) {
-            db.get(getRandomExistingKey());
+            doRandomRead(db);
         }
         long endReadNs = System.nanoTime();
         long readMs = (endReadNs - startReadNs) / 1_000_000;
         System.out.println("done reading... ms=" + readMs);
+    }
+
+    public static byte[] doRandomRead(RocksDB db) throws RocksDBException {
+        return db.get(getRandomExistingKey());
     }
 
     public static void doWrites(RocksDB db) throws RocksDBException {

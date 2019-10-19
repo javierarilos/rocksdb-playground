@@ -8,7 +8,5 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class Playground1MReadsWritesTest {
     @Test void appHasAGreeting() {
-        Playground1MReadsWrites classUnderTest = new Playground1MReadsWrites();
-        assertNotNull(classUnderTest.getGreeting(), "app should have a greeting");
     }
 }
