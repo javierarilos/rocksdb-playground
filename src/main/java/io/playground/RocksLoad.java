@@ -6,11 +6,7 @@ package io.playground;
 import com.google.common.primitives.Longs;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
-import org.rocksdb.Cache;
-import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.CompactionJobInfo;
 import org.rocksdb.CompactionOptions;
 import org.rocksdb.LRUCache;
@@ -18,9 +14,8 @@ import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDB.LiveFiles;
 import org.rocksdb.RocksDBException;
-import org.rocksdb.SstFileMetaData;
 
-public class PlaygroundReadsWritesCompaction {
+public class RocksLoad {
 
     public static final int KEY_SIZE = 9;
     public static final int VALUE_SIZE = 1024;
@@ -67,75 +62,7 @@ public class PlaygroundReadsWritesCompaction {
         }
     }
 
-    public static void main(String[] args) {
-        System.out.println(new PlaygroundReadsWritesCompaction().getGreeting());
-
-        RocksDB.loadLibrary();
-
-        try (final Options options = new Options()
-                .setCreateIfMissing(true)
-                .setDisableAutoCompactions(true)
-                .setAllowConcurrentMemtableWrite(true)
-                .setRowCache(new LRUCache(1_000_000_000_000L))
-        ) {
-            try (final RocksDB db = RocksDB.open(options, "/tmp/rocksdb-compacted-8subcompactions-128000000")) {
-//                System.out.println("Live files after compaction:");
-
-                // generate db with 20m docs and 100m writes
-                // ➜  ~ du -h /tmp/rocksdb
-                // 24G	/tmp/rocksdb
-                // fillDb(db, 20, 5);
-
-
-                // previously generated DB sstables=408
-                // time to compact (0 subcompactions) 54s out files 1
-//                doFullCompactionOnDefaultColumnFamily(db, 0);
-
-                // previously generated DB sstables=408
-                // time to compact (8 subcompactions) 52s out files 1
-//                doFullCompactionOnDefaultColumnFamily(db, 8);
-
-                // previously generated DB sstables=408
-                // time to compact (8 subcompactions, file mas size 128_000_000) 52 s out files 1
-                doFullCompactionOnDefaultColumnFamily(db, 8);
-
-
-
-//                for (int i = 0; i < 5; i++) {
-//
-//                    doReads(db);
-//                    System.out.println("Live files after read:");
-//                    printLiveFiles(db);
-//                    System.out.println("------------------------------ totalWrites=" + totalWrites);
-//                }
-
-//                System.out.println("Total written quotes nr=" + totalWrites);
-//
-//                doFullCompactionOnDefaultColumnFamily(db);
-//
-//                System.out.println("Live files after compaction:");
-//                printLiveFiles(db);
-//                System.out.println("------------------------------------");
-//
-//                for (int i = 0; i < 15; i++) {
-//
-//                    doReads(db);
-//                    System.out.println("Live files after read:");
-//                    printLiveFiles(db);
-//                    System.out.println("------------------------------------");
-//
-//                }
-
-            }
-
-        } catch (RocksDBException e) {
-            e.printStackTrace();
-        } finally {
-
-        }
-    }
-
-    private static void doFullCompactionOnDefaultColumnFamily(RocksDB db, int subcompactions) throws RocksDBException {
+    public static void doFullCompactionOnDefaultColumnFamily(RocksDB db, int subcompactions) throws RocksDBException {
 
         long initCompaction = System.nanoTime();
         CompactionOptions compactionOptions2 = new CompactionOptions();
@@ -163,13 +90,13 @@ public class PlaygroundReadsWritesCompaction {
         System.out.println(jobInfo);
     }
 
-    private static void printLiveFiles(RocksDB db) throws RocksDBException {
+    public static void printLiveFiles(RocksDB db) throws RocksDBException {
         LiveFiles liveFiles = db.getLiveFiles(false);
         System.out.println("live files nr=" + liveFiles.files.size());
         System.out.println(liveFiles.files.stream().collect(Collectors.joining(",")));
     }
 
-    private static void doReads(RocksDB db) throws RocksDBException {
+    public static void doReads(RocksDB db) throws RocksDBException {
         System.out.println("start reading... ");
         long startReadNs = System.nanoTime();
         for (long i = 0; i < 1_000_000; i++) {
@@ -180,7 +107,7 @@ public class PlaygroundReadsWritesCompaction {
         System.out.println("done reading... ms=" + readMs);
     }
 
-    private static void doWrites(RocksDB db) throws RocksDBException {
+    public static void doWrites(RocksDB db) throws RocksDBException {
         System.out.println("start writing... ");
         long startWriteNs = System.nanoTime();
 

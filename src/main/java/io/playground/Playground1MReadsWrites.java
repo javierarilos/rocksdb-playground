@@ -3,37 +3,18 @@
  */
 package io.playground;
 
+import static io.playground.RocksLoad.doReads;
+import static io.playground.RocksLoad.doWrites;
+
 import com.google.common.primitives.Longs;
 import java.util.Random;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 
 public class Playground1MReadsWrites {
 
-    public static final int KEY_SIZE = 9;
-    public static final int VALUE_SIZE = 1024;
-    private static final int NR_VALUES = 1024;
-    public static final byte[][] RANDOM_VALUES = new byte[NR_VALUES][VALUE_SIZE];
-    private static final Random random = new Random();
-    public static final int WRITES_PER_BATCH = 1_000_000;
-
-    static {
-        for (int i = 0; i < NR_VALUES; i++) {
-            random.nextBytes(RANDOM_VALUES[i]);
-        }
-    }
-
-    static long totalWrites = 0;
-
-    public String getGreeting() {
-        return "Hello world.";
-    }
-
     public static void main(String[] args) {
-        System.out.println(new PlaygroundReadsWritesCompaction().getGreeting());
 
         RocksDB.loadLibrary();
 
@@ -48,45 +29,5 @@ public class Playground1MReadsWrites {
         } catch (RocksDBException e) {
             e.printStackTrace();
         }
-    }
-
-    private static void doReads(RocksDB db) throws RocksDBException {
-        System.out.println("start reading... ");
-        long startReadNs = System.nanoTime();
-        for (long i = 0; i < 1_000_000; i++) {
-            db.get(getRandomExistingKey());
-        }
-        long endReadNs = System.nanoTime();
-        long readMs = (endReadNs - startReadNs) / 1_000_000;
-        System.out.println("done reading... ms=" + readMs);
-    }
-
-    private static void doWrites(RocksDB db) throws RocksDBException {
-        System.out.println("start writing... ");
-        long startWriteNs = System.nanoTime();
-
-        long i = totalWrites + WRITES_PER_BATCH;
-        for (; i >= totalWrites; --i) { // trying to not do inserts sorted.
-            db.put(getKey(i), getRandomValue());
-        }
-        long endWriteNs = System.nanoTime();
-        long writeMs = (endWriteNs - startWriteNs) / 1_000_000;
-        totalWrites = totalWrites + WRITES_PER_BATCH;
-        System.out.println("done writing... ms=" + writeMs);
-    }
-
-    private static byte[] getRandomValue() {
-        // we get values randomly, trying to not favour compression with some repetitive sequence.
-        return RANDOM_VALUES[random.nextInt(NR_VALUES)];
-    }
-
-    private static byte[] getRandomExistingKey() {
-        return getKey(random.nextLong() % totalWrites);
-    }
-
-    private static byte[] getKey(long i) {
-        byte[] nineBytes = new byte[KEY_SIZE];
-        System.arraycopy(Longs.toByteArray(i), 0, nineBytes, 1, 8);
-        return nineBytes;
     }
 }
