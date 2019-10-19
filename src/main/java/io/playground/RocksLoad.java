@@ -36,13 +36,13 @@ public class RocksLoad {
         return "Hello world.";
     }
 
-    public static void fillDb(RocksDB db, int numBatches, int numOverwrites) {
+    public static void fillDb(final RocksDB db, final int numBatches, final int numOverwrites) {
         System.out.println("generating DB with number overwrites=" + numOverwrites);
 
         for (int x = 0; x < numOverwrites; x++) {
             System.out.println("Starting overwrite=" + x);
 
-            for (int i = 0; i < numOverwrites; i++) {
+            for (int i = 0; i < numBatches; i++) {
                 System.out.println("Starting batch=" + i);
 
                 try {

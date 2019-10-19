@@ -25,7 +25,7 @@ public class PlaygroundDifferentCompactions {
                 .setRowCache(new LRUCache(1_000_000_000_000L))
         ) {
             try (final RocksDB db = RocksDB
-                    .open(options, "/tmp/rocksdb-compacted-8subcompactions-128000000")) {
+                    .open(options, "/tmp/rocksdb")) {
 //                System.out.println("Live files after compaction:");
 
                 // generate db with 20m docs and 100m writes
