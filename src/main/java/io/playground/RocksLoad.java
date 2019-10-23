@@ -47,7 +47,6 @@ public class RocksLoad {
                     doWrites(db);
                     System.out.println("Live files after write:");
                     printLiveFiles(db);
-                    totalWrites = 0;
                 } catch (RocksDBException e) {
                     System.out.println("Error filling DB");
                     e.printStackTrace();
@@ -60,7 +59,8 @@ public class RocksLoad {
         }
     }
 
-    public static void doFullCompactionOnDefaultColumnFamily(RocksDB db, int subcompactions) throws RocksDBException {
+    public static void doFullCompactionOnDefaultColumnFamily(RocksDB db, int subcompactions)
+            throws RocksDBException {
 
         long initCompaction = System.nanoTime();
         CompactionOptions compactionOptions2 = new CompactionOptions();
@@ -120,7 +120,9 @@ public class RocksLoad {
         long endWriteNs = System.nanoTime();
         long writeMs = (endWriteNs - startWriteNs) / 1_000_000;
         totalWrites = totalWrites + WRITES_PER_BATCH;
-        System.out.println("done writing... ms=" + writeMs);
+        System.out.println(
+                String.format("done writing... ms=%d written range keys=(%d..%d)", writeMs,
+                        totalWrites - WRITES_PER_BATCH, totalWrites));
     }
 
     private static byte[] getRandomValue() {
@@ -129,8 +131,13 @@ public class RocksLoad {
     }
 
     private static byte[] getRandomExistingKey() {
-        return getKey(random.nextLong() % 20_000_000);
+        return getKey(random.nextLong() % 1_000_000);
 //        return getKey(random.nextLong() % totalWrites);
+    }
+
+    private static byte[] getRandomKeyFromRange(long biggerKey) {
+        // get a random key from range of keys: 0..biggerKey
+        return getKey(random.nextLong() % biggerKey);
     }
 
     private static byte[] getKey(long i) {

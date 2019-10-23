@@ -9,8 +9,18 @@ public class MainScenario {
 
     public static void main(String[] args) {
         executor.submit(() -> Reader.run());
-        executor.submit(() -> Compacter.run());
-        executor.submit(() -> Writer.run());
+        executor.submit(() -> Reader.run());
+        executor.submit(() -> Reader.run());
+//        executor.submit(() -> Compacter.run());
+//        executor.submit(() -> Writer.run());
+
+//        Reader.signalForRead("/tmp/rocks-db-0");
+//        Reader.signalForRead("/tmp/rocks-db-0");
+//        Reader.signalForRead("/tmp/rocks-db-0");
+
+        Reader.signalForRead("/tmp/rocks-db-1");
+        Reader.signalForRead("/tmp/rocks-db-1");
+        Reader.signalForRead("/tmp/rocks-db-1");
     }
 
 }

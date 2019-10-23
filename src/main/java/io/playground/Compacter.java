@@ -23,24 +23,28 @@ public class Compacter {
 
             String dbPath = null;
             try {
-                dbPath = availablePaths.poll(10, TimeUnit.MINUTES);
+                while (dbPath == null) {
+                    dbPath = availablePaths.poll(50, TimeUnit.MINUTES);
+                }
+
+                System.out.println("Compacter got available db=" + dbPath);
+
+                try (
+                        RocksDB db = initDb(dbPath)
+                ) {
+
+                    RocksLoad.doFullCompactionOnDefaultColumnFamily(db, 0);
+                    System.out.println("Compacter finished processing db=" + dbPath);
+
+                } catch (RocksDBException e) {
+                    e.printStackTrace();
+                } finally {
+                    signalDone(dbPath);
+                    System.out.println("]]]]]]]]]]]]]]]]]]]]]]]] Compacter done dbPath=" + dbPath);
+                    System.out.println();
+                }
             } catch (InterruptedException e) {
                 e.printStackTrace();
-            }
-
-            System.out.println("Compacter got available db=" + dbPath);
-
-            try (
-                    RocksDB db = initDb(dbPath)
-            ) {
-
-                RocksLoad.doFullCompactionOnDefaultColumnFamily(db, 0);
-                System.out.println("Compacter finished processing db=" + dbPath);
-
-            } catch (RocksDBException e) {
-                e.printStackTrace();
-            } finally {
-                signalDone(dbPath);
             }
         }
     }

@@ -18,6 +18,7 @@ public class Reader {
     private static final ArrayBlockingQueue<String> availablePaths = new ArrayBlockingQueue<>(
             ENOUGH_ELEMENTS);
 
+
     public static boolean isGoOnReading() {
         return goOnReading;
     }
@@ -57,14 +58,20 @@ public class Reader {
                             "Reader finished processing db=" + dbPath + " received newDb="
                                     + newDbPath);
                     waitForReader(x);
+                    System.out.println("Reader background finished. Closing DB and notifying.");
 
                 } catch (RocksDBException e) {
                     e.printStackTrace();
                 } finally {
-                    signalDone(dbPath);
-                    rmRfDb(dbPath);
-                    dbPath = newDbPath;
-                    newDbPath = null;
+                    System.out.println("NOT PURGING DB on end on READER!!!!!!!!!");
+//                    System.out.println("Purging dbPath=" + dbPath);
+//                    rmRfDb(dbPath);
+//                    System.out.println("Purged dbPath=" + dbPath + " notifying to reader.");
+//                    signalDone(dbPath);
+//                    dbPath = newDbPath;
+//                    newDbPath = null;
+//                    System.out.println("||||||||||||||||||||||||||| Reader done dbPath=" + dbPath);
+//                    System.out.println();
                 }
             }
         } catch (InterruptedException | ExecutionException e) {
@@ -75,8 +82,8 @@ public class Reader {
     private static void rmRfDb(String dbPath) {
         try {
             Process process = Runtime.getRuntime().exec("rm -rf " + dbPath);
-            process.wait();
-        } catch (IOException | InterruptedException e) {
+            process.onExit().get();
+        } catch (IOException | InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
     }
@@ -93,16 +100,36 @@ public class Reader {
                 .submit(() -> {
                     long initTime = System.nanoTime();
                     long totalReads = 0;
-                    while (isGoOnReading()) {
+                    int hits = 0;
+                    int misses = 0;
+//                    while (isGoOnReading()) {
+                    while (totalReads < 1_000_000) {
                         try {
-                            RocksLoad.doRandomRead(db);
+                            byte[] x = RocksLoad.doRandomRead(db);
+                            if (totalReads % 10_000 == 0) {
+                                System.out.println("total-reads=" + totalReads);
+                                if (x != null) {
+                                    System.out.println("value len=" + x.length);
+                                } else {
+                                    System.out.println("value is a miss");
+                                }
+                            }
+                            if (x == null || x.length == 0) {
+                                misses++;
+                            } else {
+                                hits++;
+                            }
                             totalReads++;
+//                            if (totalReads % 10_000 == 0) {
+//                                System.out.println("value_len="+x.length);
+//                            }
                         } catch (RocksDBException e) {
                             e.printStackTrace();
                         }
                     }
-                    System.out.println("Stop reading totalReads=" + totalReads + "in ms="
-                            + (System.nanoTime() - initTime) / 1_000_000);
+                    System.out.println(String.format(
+                            "Stop reading totalReads=%d (%d hits / %d misses) in ms=%d",
+                            totalReads, hits, misses, (System.nanoTime() - initTime) / 1_000_000));
                 });
     }
 
@@ -115,7 +142,8 @@ public class Reader {
         final Options options = new Options()
                 .setCreateIfMissing(true)
                 .setDisableAutoCompactions(true)
-                .setAllowConcurrentMemtableWrite(true);
+                .setAllowConcurrentMemtableWrite(true)
+                .setRandomAccessMaxBufferSize(1_000_000);
         final RocksDB db = RocksDB.openReadOnly(options, nextDbPath);
         return db;
     }

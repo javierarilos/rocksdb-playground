@@ -35,7 +35,9 @@ public class Writer {
 
             String dbPath = null;
             try {
-                dbPath = availablePaths.poll(10, TimeUnit.MINUTES);
+                while (dbPath == null) {
+                    dbPath = availablePaths.poll(50, TimeUnit.MINUTES);
+                }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -45,7 +47,7 @@ public class Writer {
             try (
                     RocksDB db = initDb(dbPath)
             ) {
-               RocksLoad.fillDb(db, 20, 3);
+                RocksLoad.fillDb(db, 20, 3);
 
                 System.out.println("Writer finished processing db=" + dbPath);
 
@@ -53,6 +55,8 @@ public class Writer {
                 e.printStackTrace();
             } finally {
                 signalDone(dbPath);
+                System.out.println("########################## Writer is done dbPath=" + dbPath);
+                System.out.println();
             }
 
         }
